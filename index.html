@@ -1116,11 +1116,18 @@ async function sbFetch(path,options={}){
 async function sbGetAll(){return await sbFetch(TABLE+"?select=id,client_key,name,gender,date_consulted,shape,saved_at&order=saved_at.desc");}
 async function sbGetOne(k){const r=await sbFetch(TABLE+"?client_key=eq."+encodeURIComponent(k)+"&select=*&limit=1");return r&&r.length?r[0]:null;}
 async function sbUpsert(clientKey,name,gender,date,shape,savedAt,data){
-  return await sbFetch(TABLE,{
-    method:"POST",_prefer:"resolution=merge-duplicates,return=representation",
-    headers:{"Prefer":"resolution=merge-duplicates,return=representation"},
+  const res=await fetch(SUPA_URL+"/rest/v1/"+TABLE,{
+    method:"POST",
+    headers:{
+      "apikey":SUPA_KEY,
+      "Authorization":"Bearer "+SUPA_KEY,
+      "Content-Type":"application/json",
+      "Prefer":"resolution=merge-duplicates,return=representation"
+    },
     body:JSON.stringify({client_key:clientKey,name,gender,date_consulted:date,shape,saved_at:savedAt,data})
   });
+  if(!res.ok){const e=await res.json().catch(()=>({message:res.statusText}));throw new Error(e.message||e.details||res.statusText);}
+  const t=await res.text();return t?JSON.parse(t):null;
 }
 async function sbDelete(k){return await sbFetch(TABLE+"?client_key=eq."+encodeURIComponent(k),{method:"DELETE",_prefer:"return=minimal"});}
 
